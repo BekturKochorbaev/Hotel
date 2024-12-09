@@ -22,6 +22,7 @@ class HotelAdmin(TranslationAdmin):
             'screen': ('modeltranslation/css/tabbed_translation_fields.css',),
         }
 
+
 class RoomImageInline(admin.TabularInline):
     model = RoomImage
     extra = 1

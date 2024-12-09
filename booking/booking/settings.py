@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
+    'rest_framework_swagger',  # Swagger
+    'rest_framework',  # Django rest framework
+    'drf_yasg',
     'rest_framework.authtoken',
     'hotel',
     "phonenumber_field",
