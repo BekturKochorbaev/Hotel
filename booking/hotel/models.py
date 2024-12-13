@@ -8,6 +8,7 @@ from django.urls import reverse
 from django_rest_passwordreset.signals import reset_password_token_created
 from django.core.mail import send_mail
 
+
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
     email_plaintext_message = "{}?token={}".format(
@@ -34,8 +35,9 @@ class UserProfile(AbstractUser):
     )
     user_role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='simpleUser')
     phone_number = PhoneNumberField(null=True, blank=True, region='KG')
-    age = models.PositiveIntegerField(verbose_name=[MinValueValidator(15),
-                                                    MaxValueValidator(100)], null=True, blank=True)
+    age = models.PositiveIntegerField(verbose_name="Возраст",
+                                      validators=[MinValueValidator(15), MaxValueValidator(100)], null=True, blank=True)
+
 
 class Hotel(models.Model):
     name_hotel = models.CharField(max_length=30)
@@ -49,9 +51,14 @@ class Hotel(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     created_date = models.DateField(auto_now_add=True)
 
-
     def __str__(self):
         return f'{self.name_hotel}-{self.country}'
+
+    def get_count_review(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return reviews.count()
+        return 0
 
 
 class HotelImage(models.Model):
@@ -95,7 +102,6 @@ class Review(models.Model):
     stars = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)], verbose_name='Рейтинг')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
 
-
     def __str__(self):
         return f'{self.user_name}, {self.hotel}, {self.stars}'
 
@@ -104,14 +110,16 @@ class Booking(models.Model):
     hotel_book = models.ForeignKey(Hotel, on_delete=models.CASCADE)
     room_book = models.ForeignKey(Room, on_delete=models.CASCADE)
     user_book = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    chek_in = models.DateTimeField()
-    chek_uot = models.DateTimeField()
+    check_in_date = models.DateField()
+    check_out_date = models.DateField()
     total_price = models.PositiveIntegerField(default=0)
     STATUS_BOOK_ROOM = (
         ('отменено', 'отменено'),
+        ('Бронь', 'Бронь'),
         ('подверждено', 'подверждено')
     )
     status_book = models.CharField(max_length=16, choices=STATUS_BOOK_ROOM)
 
     def __str__(self):
-        return f'{self.user_book}, {self.hotel_book}, {self.room_book}, {self.status_book }'
+        return f'{self.user_book}, {self.hotel_book}, {self.room_book}, {self.status_book}'
+
