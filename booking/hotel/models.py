@@ -28,6 +28,10 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     )
 
 
+class ImageBase(models.Model):
+    image = models.ImageField(upload_to='images/', null=True, blank=True)
+
+
 class UserProfile(AbstractUser):
     ROLE_CHOICES = (
         ('simpleUser', 'simpleUser'),
@@ -61,9 +65,8 @@ class Hotel(models.Model):
         return 0
 
 
-class HotelImage(models.Model):
+class HotelImage(ImageBase):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_images')
-    hotel_image = models.ImageField(upload_to='hotel_image/', null=True, blank=True)
 
 
 class Room(models.Model):
@@ -90,9 +93,8 @@ class Room(models.Model):
         return f'{self.hotell_room}, {self.room_types}, {self.room_number}'
 
 
-class RoomImage(models.Model):
+class RoomImage(ImageBase):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='room_images')
-    room_image = models.ImageField(upload_to='room_image/', null=True, blank=True)
 
 
 class Review(models.Model):

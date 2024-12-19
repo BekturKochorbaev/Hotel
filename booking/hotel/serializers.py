@@ -14,7 +14,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 class RoomImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomImage
-        fields = ['room_image']
+        fields = ['image']
 
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -46,7 +46,7 @@ class RoomCreateSerializers(serializers.ModelSerializer):
 class HotelImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HotelImage
-        fields = ['hotel_image']
+        fields = ['image']
 
 
 class HotelListSerializers(serializers.ModelSerializer):
