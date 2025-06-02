@@ -33,10 +33,16 @@ jobs:
           tar -xzf /tmp/deploy.tar.gz -C ~/Hotel
           rm /tmp/deploy.tar.gz
 
-          # Запуск только Nginx, Web и DB. Certbot не трогаем!
           docker compose -f ~/Hotel/booking/docker-compose.yml up -d --build web db nginx
+
+          echo "Running migrations..."
+          docker compose -f ~/Hotel/booking/docker-compose.yml exec -T web python manage.py migrate
+
+          echo "Collecting static files..."
+          docker compose -f ~/Hotel/booking/docker-compose.yml exec -T web python manage.py collectstatic --noinput
 
           docker compose -f ~/Hotel/booking/docker-compose.yml ps
 
-          echo "Deployment finished without touching certbot"
+          echo "Deployment finished"
         EOF
+    

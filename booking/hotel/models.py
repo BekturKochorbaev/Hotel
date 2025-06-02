@@ -55,6 +55,7 @@ class Hotel(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     created_date = models.DateField(auto_now_add=True)
     bath = models.CharField(max_length=32, null=True, blank=True)
+    car = models.CharField(max_length=32, null=True, blank=True)
 
     def __str__(self):
         return f'{self.name_hotel}-{self.country}'
