@@ -46,7 +46,7 @@ class RoomCreateSerializers(serializers.ModelSerializer):
 class HotelImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HotelImage
-        fields = ['image']
+        fields = '__all__'
 
 
 class HotelListSerializers(serializers.ModelSerializer):
