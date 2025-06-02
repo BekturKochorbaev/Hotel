@@ -1,0 +1,47 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # или другая ветка для деплоя
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH key
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Archive files
+      run: |
+        tar -czf deploy.tar.gz . || echo "tar gave a warning, continuing anyway"
+
+    - name: Copy archive to server
+      run: |
+        scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/deploy.tar.gz
+
+    - name: Deploy on remote server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          echo "Cleaning old project files..."
+          rm -rf ~/Hotel/*
+          mkdir -p ~/Hotel
+
+          echo "Unpacking new code..."
+          tar -xzf /tmp/deploy.tar.gz -C ~/Hotel
+          rm /tmp/deploy.tar.gz
+
+          echo "Rebuilding and restarting Docker containers..."
+          docker-compose -f ~/Hotel/booking/docker-compose.yml up -d --build
+
+          echo "Current Docker container status:"
+          docker-compose -f ~/Hotel/booking/docker-compose.yml ps
+
+          echo "✅ Deploy completed"
+        EOF

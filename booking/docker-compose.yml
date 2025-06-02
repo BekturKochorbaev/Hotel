@@ -1,0 +1,77 @@
+services:
+  web:
+    build: .
+    command: >
+      bash -c "./manage.py collectstatic --noinput && ./manage.py makemigrations && ./manage.py migrate && gunicorn -b 0.0.0.0:8000 booking.wsgi:application"
+    volumes:
+      - .:/app
+      - /home/ubuntu/Hotel/booking/staticfiles:/app/static
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bishkek
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bishkek
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /home/ubuntu/Hotel/booking/staticfiles:/app/static
+      - media_volume:/app/media
+      - /home/ubuntu/Hotel/letsencrypt:/etc/letsencrypt
+      - /home/ubuntu/Hotel/letsencrypt/www:/var/www/html
+    depends_on:
+      - web
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bishkek
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - /home/ubuntu/Hotel/letsencrypt:/etc/letsencrypt
+      - /home/ubuntu/Hotel/letsencrypt/www:/var/www/html
+    environment:
+      - URL=kassian.store
+      - SUBDOMAINS=api
+      - VALIDATION=http
+      - ONLY_SUBDOMAINS=true
+      - STAGING=false
+    command:
+      - certonly
+      - --webroot
+      - --webroot-path
+      - /var/www/html
+      - --email
+      - argennuraliev006@gmail.com
+      - --agree-tos
+      - --no-eff-email
+      - --force-renewal
+      - -d
+      - api.kassian.store
+    depends_on:
+      - nginx
+
+volumes:
+  postgres_data:
+  media_volume:
