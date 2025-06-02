@@ -14,7 +14,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 class RoomImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomImage
-        fields = ['image']
+        fields = '__all__'
 
 
 class RoomSerializer(serializers.ModelSerializer):
