@@ -1,8 +1,9 @@
-name: Deploy to EC2
+name: Deploy to Server
 
 on:
   push:
-    branches: [ main ]  # или 'master', если у тебя основная ветка так называется
+    branches:
+      - main  # или другая ветка для деплоя
 
 jobs:
   deploy:
@@ -12,22 +13,35 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Copy files to EC2 using SSH
-      uses: appleboy/scp-action@v0.1.7
+    - name: Set up SSH key
+      uses: webfactory/ssh-agent@v0.5.4
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        source: "."
-        target: "~/Hotel"
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Execute SSH commands on EC2
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          cd ~/Hotel
-          docker-compose down
-          docker-compose up -d --build
+    - name: Archive files
+      run: |
+        tar -czf deploy.tar.gz .
+
+    - name: Copy archive to server
+      run: |
+        scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/deploy.tar.gz
+
+    - name: Deploy on remote server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          echo "Cleaning old project files..."
+          rm -rf ~/Hotel/*
+          mkdir -p ~/Hotel
+
+          echo "Unpacking new code..."
+          tar -xzf /tmp/deploy.tar.gz -C ~/Hotel
+          rm /tmp/deploy.tar.gz
+
+          echo "Rebuilding and restarting Docker containers..."
+          docker-compose -f ~/Hotel/booking/docker-compose.yml up -d --build
+
+          echo "Current Docker container status:"
+          docker-compose -f ~/Hotel/booking/docker-compose.yml ps
+
+          echo "✅ Deploy completed"
+        EOF
