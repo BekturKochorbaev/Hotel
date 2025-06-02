@@ -28,21 +28,31 @@ jobs:
 
     - name: Deploy on remote server
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          set -e  # Прервать, если ошибка
+
+          # Распаковка нового кода
           rm -rf ~/Hotel/*
+          mkdir -p ~/Hotel
           tar -xzf /tmp/deploy.tar.gz -C ~/Hotel
           rm /tmp/deploy.tar.gz
 
-          docker compose -f ~/Hotel/booking/docker-compose.yml up -d --build web db nginx
+          cd ~/Hotel/booking
 
-          echo "Running migrations..."
-          docker compose -f ~/Hotel/booking/docker-compose.yml exec -T web python manage.py migrate
+          # Сборка образов (не запускаем сразу web!)
+          docker compose build
 
-          echo "Collecting static files..."
-          docker compose -f ~/Hotel/booking/docker-compose.yml exec -T web python manage.py collectstatic --noinput
+          # Запускаем БД и Nginx
+          docker compose up -d db nginx
+          echo "Waiting for PostgreSQL..."
+          sleep 10
 
-          docker compose -f ~/Hotel/booking/docker-compose.yml ps
+          # Применяем миграции и собираем статику
+          docker compose run --rm web_migrate
 
-          echo "Deployment finished"
+          # Запускаем веб-приложение
+          docker compose up -d web
+
+          docker compose ps
+          echo "✅ Deployment completed"
         EOF
-    

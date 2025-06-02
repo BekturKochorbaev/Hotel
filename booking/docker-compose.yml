@@ -16,6 +16,21 @@ services:
       - PGID=1000
       - TZ=Asia/Bishkek
 
+  web_migrate:
+    build: .
+    command: >
+      bash -c "python manage.py migrate && python manage.py collectstatic --noinput"
+    volumes:
+      - .:/app
+      - /home/ubuntu/Hotel/booking/staticfiles:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bishkek
+
   db:
     image: postgres:latest
     restart: always
