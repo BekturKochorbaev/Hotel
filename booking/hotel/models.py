@@ -54,7 +54,7 @@ class Hotel(models.Model):
     hotel_video = models.FileField(upload_to='hotel_video/', null=True, blank=True)
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     created_date = models.DateField(auto_now_add=True)
-    bath = models.CharField()
+    bath = models.CharField(max_length=32, null=True, blank=True)
 
     def __str__(self):
         return f'{self.name_hotel}-{self.country}'
