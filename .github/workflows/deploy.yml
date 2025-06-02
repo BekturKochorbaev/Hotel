@@ -20,7 +20,7 @@ jobs:
 
     - name: Archive files
       run: |
-        tar -czf deploy.tar.gz .
+        tar -czf deploy.tar.gz . || echo "tar gave a warning, continuing anyway"
 
     - name: Copy archive to server
       run: |
