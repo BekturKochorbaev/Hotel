@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main  # или другая ветка для деплоя
+      - main
 
 jobs:
   deploy:
@@ -28,20 +28,15 @@ jobs:
 
     - name: Deploy on remote server
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          echo "Cleaning old project files..."
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
           rm -rf ~/Hotel/*
-          mkdir -p ~/Hotel
-
-          echo "Unpacking new code..."
           tar -xzf /tmp/deploy.tar.gz -C ~/Hotel
           rm /tmp/deploy.tar.gz
 
-          echo "Rebuilding and restarting Docker containers..."
-          docker-compose -f ~/Hotel/booking/docker-compose.yml up -d --build
+          # Запуск только Nginx, Web и DB. Certbot не трогаем!
+          docker compose -f ~/Hotel/booking/docker-compose.yml up -d --build web db nginx
 
-          echo "Current Docker container status:"
-          docker-compose -f ~/Hotel/booking/docker-compose.yml ps
+          docker compose -f ~/Hotel/booking/docker-compose.yml ps
 
-          echo "✅ Deploy completed"
+          echo "Deployment finished without touching certbot"
         EOF
