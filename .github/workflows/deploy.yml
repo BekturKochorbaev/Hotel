@@ -24,7 +24,7 @@ jobs:
         pip install -r booking/req.txt
 
     - name: Run Django tests
-      run: python manage.py test
+      run: python booking/manage.py test
 
     - name: Test Docker build
       run: docker compose build
