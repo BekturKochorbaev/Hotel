@@ -18,41 +18,36 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+    - name: Add server to known_hosts
+      run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
     - name: Archive files
-      run: |
-        tar -czf deploy.tar.gz . || echo "tar gave a warning, continuing anyway"
+      run: tar -czf deploy.tar.gz . || echo "tar warning, continue"
 
-    - name: Copy archive to server
-      run: |
-        scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/deploy.tar.gz
+    - name: Copy to server
+      run: scp deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/deploy.tar.gz
 
-    - name: Deploy on remote server
+    - name: SSH deploy
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          set -e  # Прервать, если ошибка
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          set -e
 
-          # Распаковка нового кода
-          rm -rf ~/Hotel/*
+          rm -rf ~/Hotel/booking
           mkdir -p ~/Hotel
-          tar -xzf /tmp/deploy.tar.gz -C ~/Hotel
+          tar -xzf /tmp/deploy.tar.gz -C ~/Hotel --strip-components=1
           rm /tmp/deploy.tar.gz
 
           cd ~/Hotel/booking
 
-          # Сборка образов (не запускаем сразу web!)
           docker compose build
-
-          # Запускаем БД и Nginx
           docker compose up -d db nginx
-          echo "Waiting for PostgreSQL..."
           sleep 10
 
-          # Применяем миграции и собираем статику
-          docker compose run --rm web_migrate
+          docker compose run --rm web python manage.py migrate
+          docker compose run --rm web python manage.py collectstatic --noinput
 
-          # Запускаем веб-приложение
           docker compose up -d web
-
           docker compose ps
+
           echo "✅ Deployment completed"
         EOF
